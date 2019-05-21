@@ -1,4 +1,0 @@
-.terraform/
-AWSConfig/terraform.tfstate
-Cloudtrail/terraform.tfstate
-terraform.tfstate
