@@ -150,7 +150,7 @@ resource "aws_cloudwatch_metric_alarm" "default" {
   evaluation_periods  = "1"
   metric_name         = "SigninWithoutMFA"
   namespace           = "Security"
-  period              = "300"
+  period              = "30"
   statistic           = "Sum"
   treat_missing_data  = "notBreaching"
   threshold           = "1"
