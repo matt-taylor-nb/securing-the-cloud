@@ -2,8 +2,10 @@ provider "aws" {
   region  = "us-east-1"
 }
 
+data "aws_caller_identity" "current" {}
+
 resource "aws_s3_bucket" "cloudtrail" {
-    bucket = "mattisawesome-cloudtrail"
+    bucket = "${var.cloudtrail_bucket}"
     acl = "private"
     force_destroy = "true"
 
@@ -14,6 +16,10 @@ resource "aws_s3_bucket" "cloudtrail" {
       }
     }
   }
+}
+
+resource "aws_s3_bucket_policy" "cloudtrail" {
+  bucket = "${aws_s3_bucket.cloudtrail.id}"
   policy = <<POLICY
 {
     "Version": "2012-10-17",
@@ -25,7 +31,7 @@ resource "aws_s3_bucket" "cloudtrail" {
               "Service": "cloudtrail.amazonaws.com"
             },
             "Action": "s3:GetBucketAcl",
-            "Resource": "arn:aws:s3:::mattisawesome-cloudtrail"
+            "Resource": "arn:aws:s3:::${var.cloudtrail_bucket}"
         },
         {
             "Sid": "AWSCloudTrailWrite",
@@ -34,7 +40,7 @@ resource "aws_s3_bucket" "cloudtrail" {
               "Service": "cloudtrail.amazonaws.com"
             },
             "Action": "s3:PutObject",
-            "Resource": "arn:aws:s3:::mattisawesome-cloudtrail/*",
+            "Resource": "arn:aws:s3:::${var.cloudtrail_bucket}/*",
             "Condition": {
                 "StringEquals": {
                     "s3:x-amz-acl": "bucket-owner-full-control"
@@ -110,7 +116,7 @@ resource "aws_iam_policy" "cloudwatch" {
         "logs:PutLogEvents"
       ],
       "Resource": [
-        "arn:aws:logs:us-east-1:117615622172:log-group:CloudTrail:log-stream:*"
+        "arn:aws:logs:us-east-1:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.cloudwatch.name}:log-stream:*"
       ]
     }
   ]
@@ -127,7 +133,7 @@ resource "aws_iam_policy_attachment" "cloudwatch" {
 
 
 resource "aws_cloudwatch_log_metric_filter" "no-mfa" {
-  name           = "no-mfa-filter"
+  name           = "SigninWithoutMFA"
   pattern        = "{ $.eventName = \"ConsoleLogin\" && $.additionalEventData.MFAUsed = \"No\" }"
   log_group_name = "${aws_cloudwatch_log_group.cloudwatch.name}"
 
@@ -139,7 +145,7 @@ resource "aws_cloudwatch_log_metric_filter" "no-mfa" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "default" {
-  alarm_name          = "no-mfa-enabled"
+  alarm_name          = "SigninWithoutMFA"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = "1"
   metric_name         = "SigninWithoutMFA"
@@ -149,5 +155,5 @@ resource "aws_cloudwatch_metric_alarm" "default" {
   treat_missing_data  = "notBreaching"
   threshold           = "1"
   alarm_description   = "Alarms when a user logs into the console without MFA."
-  alarm_actions       = ["arn:aws:sns:us-east-1:117615622172:notifications"]
+  alarm_actions       = ["arn:aws:sns:us-east-1:${data.aws_caller_identity.current.account_id}:notifications"]
 }
