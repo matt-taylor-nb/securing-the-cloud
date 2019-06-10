@@ -1,11 +1,7 @@
-provider "aws" {
-  region  = "us-east-1"
+resource "aws_s3_bucket" "public" {
+    bucket = "mattisawesome-public-test"
+    acl = "public-read"
 }
-
-resource "aws_vpc" "demo" {
-  cidr_block = "10.0.0.0/16"
-}
-
 resource "aws_security_group" "demo" {
   name        = "demo"
   description = "allow SSH to trigger rules"
@@ -25,7 +21,11 @@ resource "aws_security_group" "demo" {
     cidr_blocks     = ["0.0.0.0/0"]
   }
 }
-resource "aws_s3_bucket" "public" {
-    bucket = "mattisawesome-public-test"
-    acl = "public-read"
+
+provider "aws" {
+  region  = "us-east-1"
+}
+
+resource "aws_vpc" "demo" {
+  cidr_block = "10.0.0.0/16"
 }
